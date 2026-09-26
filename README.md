@@ -27,10 +27,10 @@
 
 | 内置包 | 内容 | 适用架构 | 是否联网 |
 |---|---|---|---|
-| `vohive-release-1.5.5.zip` | 在线安装脚本，运行时按架构到上游 release 拉取二进制 | arm64 + amd64 自动检测 | 需要访问上游 release |
+| `vohive-release-1.5.5.zip` | 安装脚本 + 本地 binary 缓存；缓存命中时直接安装，缺失时才回退在线下载 | amd64 + arm64 + armv7 自动检测 | ✅ 默认完全离线 |
 | `vohive-backup.tar.gz` | **离线恢复包**：内置 vohive 二进制（sha1 `ee16a5c0cd04505df43805fc81838f3e20b16aee`，与 backup `install.sh` 注释中记录的原版 sha1 一致）+ `install.sh` + `vohive.service` + `mcc-mnc-table.json` | **x86_64（Intel / 方案 B）** | ✅ 完全离线，**当前推荐路径** |
 
-> ⚠️ **Apple Silicon（方案 A，arm64）暂无内置离线二进制**：优先使用上游 release 的最新发版资产，或用 `vohive-release-1.5.5.zip` 在线方式安装；如需完全离线，可自行备一份 `vohive_<ver>_linux_arm64` 后参照 `vohive-backup.tar.gz` 里的 `install.sh` 离线安装。Intel Mac（方案 B）直接用 `vohive-backup.tar.gz` 即可全程离线部署。
+`vohive-release-1.5.5.zip` 内置的三份 binary 来自 [6mb/vohive-release v1.5.5](https://github.com/6mb/vohive-release/releases/tag/v1.5.5)，实际构建版本为 `v1.5.5-10-gf9eb85d`。文件大小与 SHA-256 已按 GitHub Release API 核对，校验清单位于压缩包内的 `binaries/SHA256SUMS`；安装器在使用包内缓存前也会强制校验。
 
 ### [iniwex5/vohive-release](https://github.com/iniwex5/vohive-release)
 
@@ -214,7 +214,7 @@ sudo bash install.sh
 ```
 脚本会校验架构、把内置二进制 / 运营商表 / 默认配置 / systemd 单元一并部署到位，**不再联网下载二进制**。
 
-#### 方式二（在线）：`vohive-release-1.5.5.zip`（arm64 / amd64 自动检测）
+#### 方式二（推荐·离线）：`vohive-release-1.5.5.zip`（amd64 / arm64 / armv7 自动检测）
 
 ```bash
 sudo apt-get update && sudo apt-get install -y unzip
@@ -224,7 +224,7 @@ unzip -o vohive-release-1.5.5.zip
 cd vohive-release-1.5.5
 bash install.sh
 ```
-> ⚠️ 此方式在「下载二进制」那步依赖上游 `iniwex5/vohive-release` 的 release asset；如果上游资产路径调整、网络不可用或下载失败，方案 B 请改用方式一，方案 A 需自备 arm64 二进制或改用上游最新 release。
+脚本会优先检测压缩包内 `binaries/vohive_v1.5.5_linux_<arch>`。缓存存在且非空时直接安装，不要求 `curl`/`wget`；仅当指定未缓存版本或显式使用 `--version latest` 时回退在线下载。
 
 #### 部署结果（两方式一致）
 
@@ -335,7 +335,7 @@ lsusb   # → 2c7c:0125 Quectel EC25
 # → UTM 把直通重新绑到 2c7c:0125 / 物理端口
 # 部署 vohive（二选一）：
 #  · 方案 B(Intel/amd64，离线推荐)：下 vohive-backup.tar.gz → tar -xzf → sudo bash install.sh
-#  · 方案 A(Apple Silicon/arm64，在线)：下 vohive-release-1.5.5.zip → unzip → bash install.sh（依赖上游 release 可访问）
+#  · 方案 A(Apple Silicon/arm64，离线推荐)：下 vohive-release-1.5.5.zip → unzip → bash install.sh
 wget -O vohive-backup.tar.gz \
   https://raw.githubusercontent.com/wlzh/dji-4g-vohive-mac/main/vohive-backup.tar.gz
 tar -xzf vohive-backup.tar.gz
